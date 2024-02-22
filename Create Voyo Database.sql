@@ -47,7 +47,7 @@ DROP TABLE IF EXISTS availability CASCADE;
 CREATE TABLE availability
 (
     idAvailability SERIAL,
-    phoneNumber    VARCHAR(10) NOT NULL,
+    phoneNumber    VARCHAR(13) NOT NULL,
     availability   TIMESTAMP,
     duration       TIME,
     repeat         VARCHAR(50) CHECK ( repeat IN ('DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY')),
@@ -59,8 +59,8 @@ DROP TABLE IF EXISTS visit CASCADE;
 CREATE TABLE visit
 (
     idVisit             SERIAL,
-    phoneNumberProspect VARCHAR(10),
-    phoneNumberVisitor  VARCHAR(10),
+    phoneNumberProspect VARCHAR(13),
+    phoneNumberVisitor  VARCHAR(13),
     idRealEstate        INTEGER   NOT NULL,
     codeVerification    SMALLINT  NOT NULL,
     startTime           TIMESTAMP NOT NULL,
@@ -83,7 +83,7 @@ CREATE TABLE criteria
     photo          TEXT,
     videoRequired  BOOLEAN,
     video          TEXT,
-    phoneNumber    VARCHAR(10),
+    phoneNumber    VARCHAR(13),
     reusable       BOOLEAN,
     PRIMARY KEY (idCriteria),
     FOREIGN KEY (phoneNumber) REFERENCES "user" (phoneNumber)
