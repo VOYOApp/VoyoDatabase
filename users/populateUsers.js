@@ -1,6 +1,7 @@
 const axios = require('axios');
 const fs = require('fs');
 const GOOGLE_PLACES_API_KEY = 'AIzaSyBznSC8S1mPU-GPjsxuagQqnNK3a8xVOl4'; // Replace with your API key
+const URL = 'http://localhost:3000';
 
 const readFileAsync = (filename) => {
     return new Promise((resolve, reject) => {
@@ -26,11 +27,8 @@ const getAddressId = async (location) => {
             },
         });
 
-        console.log(response.data)
 
         if (response.data.status === 'OK' && response.data.candidates.length > 0) {
-            console.log(`Address ${location} has place_id ${response.data.candidates[0].place_id}`);
-            console.log(response.data.candidates)
             return response.data.candidates[0].place_id;
         }
     } catch (error) {
@@ -58,11 +56,7 @@ const getRandomAddress = (filename) => {
     }
 };
 
-
-
-const processUser = async (user) => {
-
-    console.log(user)
+const createUser = async (user) => {
     const phoneNumber = '+33' + user.cell.replaceAll('-', '').substring(1);
     const firstName = user.name.first;
     const lastName = user.name.last;
@@ -77,7 +71,7 @@ const processUser = async (user) => {
     const radius = getRandomRadius();
 
     try {
-        await axios.post('http://127.0.0.1:3000/inscription', {
+        await axios.post(`${URL}/inscription`, {
             phone_number: phoneNumber,
             first_name: firstName,
             last_name: lastName,
@@ -107,6 +101,46 @@ const processUser = async (user) => {
             address_id: addressId,
             radius: radius,
         });
+    }
+}
+
+const createRandomAvailability = async (userId) => {
+    // Create a random date and time on the first week of February 2024
+    const year = 2024;
+    const month = 1; // February
+    const day = Math.floor(Math.random() * 7) + 1;
+    const hour = Math.floor(Math.random() * 24);
+    const minute = Math.floor(Math.random() * 60);
+    const date = new Date(year, month, day, hour, minute);
+    const availability = date.toISOString();
+
+    // Create a random duration between 1 and 12 hours
+    const duration = `${Math.floor(Math.random() * 12) + 1}h`;
+
+    // Create a random repeat pattern (DAILY, WEEKLY, MONTHLY, YEARLY, null)
+    const repeatPattern = ['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY', null][Math.floor(Math.random() * 5)];
+
+
+    try {
+        await axios.post(`${URL}/availability`, {
+            phone_number: userId, availability, duration, repeat: repeatPattern,
+
+        });
+    } catch (error) {
+        console.error(`Error creating availability for user ${userId}: ${error.message}`);
+    }
+}
+
+const processUser = async (user) => {
+    try {
+        await createUser(user);
+        // Create between 1 and 5 random availabilities for the user
+        const numberOfAvailabilities = Math.floor(Math.random() * 5) + 1;
+        for (let i = 0; i < numberOfAvailabilities; i++) {
+            await createRandomAvailability('+33' + user.cell.replaceAll('-', '').substring(1));
+        }
+    } catch (error) {
+        console.error(`Error processing user: ${error.message}`);
     }
 };
 

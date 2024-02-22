@@ -38,7 +38,10 @@ CREATE TABLE "user"
     profilePicture TEXT,
     pricing        DECIMAL(10, 2),
     idAddressGMap  VARCHAR(200),
-    radius         BIGINT,
+    radius         INTEGER,
+    x              DECIMAL(10, 8),
+    y              DECIMAL(11, 8),
+    geom           GEOMETRY,
     PRIMARY KEY (phoneNumber),
     FOREIGN KEY (idRole) REFERENCES Role (idRole)
 );
