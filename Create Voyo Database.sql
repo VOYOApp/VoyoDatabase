@@ -28,18 +28,17 @@ CREATE TABLE role
 DROP TABLE IF EXISTS "user" CASCADE;
 CREATE TABLE "user"
 (
-    phoneNumber    VARCHAR(10) NOT NULL,
+    phoneNumber    VARCHAR(13) NOT NULL,
     firstName      TEXT        NOT NULL,
     lastName       VARCHAR(50) NOT NULL,
     email          VARCHAR(50),
-    description    TEXT,
     password       TEXT        NOT NULL,
     idRole         INTEGER     NOT NULL,
     biography      TEXT,
     profilePicture TEXT,
     pricing        DECIMAL(10, 2),
     idAddressGMap  VARCHAR(200),
-    radius         VARCHAR(50),
+    radius         DECIMAL(10, 2),
     PRIMARY KEY (phoneNumber),
     FOREIGN KEY (idRole) REFERENCES Role (idRole)
 );
