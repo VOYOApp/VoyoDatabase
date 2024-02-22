@@ -1,5 +1,10 @@
 const axios = require('axios');
 const fs = require('fs');
+
+const NUMBER_OF_USERS = 30; // Max => 5000
+const NUMBER_OF_AVAILABILITIES_MAX = 3; // This is the maximum number of availabilities that will be created for each user
+
+
 const GOOGLE_PLACES_API_KEY = 'AIzaSyBznSC8S1mPU-GPjsxuagQqnNK3a8xVOl4'; // Replace with your API key
 const URL = 'http://localhost:3000';
 
@@ -124,7 +129,6 @@ const createRandomAvailability = async (userId) => {
     try {
         await axios.post(`${URL}/availability`, {
             phone_number: userId, availability, duration, repeat: repeatPattern,
-
         });
     } catch (error) {
         console.error(`Error creating availability for user ${userId}: ${error.message}`);
@@ -135,7 +139,7 @@ const processUser = async (user) => {
     try {
         await createUser(user);
         // Create between 1 and 5 random availabilities for the user
-        const numberOfAvailabilities = Math.floor(Math.random() * 5) + 1;
+        const numberOfAvailabilities = Math.floor(Math.random() * NUMBER_OF_AVAILABILITIES_MAX) + 1;
         for (let i = 0; i < numberOfAvailabilities; i++) {
             await createRandomAvailability('+33' + user.cell.replaceAll('-', '').substring(1));
         }
@@ -148,9 +152,9 @@ const processUsers = async () => {
     try {
         const data = await readFileAsync('users.json');
         const users = data.results;
-        console.log(`Processing ${users.length} users...`);
-        for (const user of users) {
-            await processUser(user);
+        console.log(`Processing ${NUMBER_OF_USERS} users...`);
+        for (let i = 0; i < NUMBER_OF_USERS; i++) {
+            await processUser(users[i]);
         }
     } catch (error) {
         console.error(`Error reading the file: ${error.message}`);
