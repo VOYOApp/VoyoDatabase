@@ -50,7 +50,7 @@ CREATE TABLE availability
     phoneNumber    VARCHAR(13) NOT NULL,
     availability   TIMESTAMP,
     duration       TIME,
-    repeat         VARCHAR(50) CHECK ( repeat IN ('DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY')),
+    repeat         VARCHAR(50) CHECK ( repeat IN ('DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY', null)),
     PRIMARY KEY (idAvailability),
     FOREIGN KEY (phoneNumber) REFERENCES "user" (phoneNumber)
 );
