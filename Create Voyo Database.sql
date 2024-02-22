@@ -65,7 +65,7 @@ CREATE TABLE visit
     phoneNumberProspect VARCHAR(13),
     phoneNumberVisitor  VARCHAR(13),
     idRealEstate        INTEGER   NOT NULL,
-    codeVerification    SMALLINT  NOT NULL,
+    codeVerification    INT  NOT NULL,
     startTime           TIMESTAMP NOT NULL,
     price               VARCHAR(50),
     status              VARCHAR(50) CHECK ( status IN ('PENDING', 'ACCEPTED', 'REFUSED', 'CANCELED', 'DONE')),

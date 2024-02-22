@@ -1,5 +1,6 @@
 const axios = require('axios');
 const fs = require('fs');
+const faker = require('faker');
 
 const NUMBER_OF_USERS = 30; // Max => 5000
 const NUMBER_OF_AVAILABILITIES_MAX = 3; // This is the maximum number of availabilities that will be created for each user
@@ -148,14 +149,55 @@ const processUser = async (user) => {
     }
 };
 
+
+const createRandomVisits = async () => {
+    // 1) Get all the users
+    const response = await axios.get(`${URL}/user`);
+    const users = response.data;
+
+    // 2) Create random visits
+    console.log('Creating random visits...');
+
+    for (const user of users) {
+        const numberOfVisits = Math.floor(Math.random() * 10) + 1; // Random number of visits between 1 and 10
+
+        for (let i = 0; i < numberOfVisits; i++) {
+            const randomUser = users[Math.floor(Math.random() * users.length)]; // Random user from the list
+
+            const visitData = {
+                phone_number_prospect: user.phone_number,
+                phone_number_visitor: randomUser.phone_number,
+                real_estate_id: Math.floor(Math.random() * 10) + 1,
+                verification_code: Math.floor(Math.random() * 999999) + 100000,
+                start_time: faker.date.future(), // Example: Generating a random future date
+                price: Math.floor(Math.random() * 40) + 10, // Example: Generating a random price between 50 and 200
+                status: faker.random.arrayElement(['PENDING', 'ACCEPTED', 'REFUSED', 'CANCELED', 'DONE']),
+                note: parseInt((Math.random() * (5 - 0.1) + 0.1).toFixed(1))
+            };
+
+
+            // 3) Post the random visits to the API
+            try {
+                const response = await axios.post(`${URL}/visit`, visitData);
+                console.log('Random visits created successfully:', response.data);
+            } catch (error) {
+                console.error('Error creating random visits:', error.response ? error.response.data : error.message);
+            }
+        }
+    }
+}
+
+
 const processUsers = async () => {
     try {
-        const data = await readFileAsync('users.json');
-        const users = data.results;
-        console.log(`Processing ${NUMBER_OF_USERS} users...`);
-        for (let i = 0; i < NUMBER_OF_USERS; i++) {
-            await processUser(users[i]);
-        }
+        // const data = await readFileAsync('users.json');
+        // const users = data.results;
+        // console.log(`Processing ${NUMBER_OF_USERS} users...`);
+        // for (let i = 0; i < NUMBER_OF_USERS; i++) {
+        //     await processUser(users[i]);
+        // }
+
+        await createRandomVisits();
     } catch (error) {
         console.error(`Error reading the file: ${error.message}`);
     }
