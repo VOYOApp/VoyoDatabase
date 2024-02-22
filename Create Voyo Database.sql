@@ -68,7 +68,7 @@ CREATE TABLE visit
     codeVerification    SMALLINT  NOT NULL,
     startTime           TIMESTAMP NOT NULL,
     price               VARCHAR(50),
-    status              VARCHAR(50),
+    status              VARCHAR(50) CHECK ( status IN ('PENDING', 'ACCEPTED', 'REFUSED', 'CANCELED', 'DONE')),
     note                NUMERIC(8, 3),
     PRIMARY KEY (idVisit),
     FOREIGN KEY (phoneNumberProspect) REFERENCES "user" (phoneNumber),
