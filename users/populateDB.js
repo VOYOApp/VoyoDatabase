@@ -4,6 +4,7 @@ const faker = require('faker');
 
 const NUMBER_OF_USERS = 30; // Max => 5000
 const NUMBER_OF_AVAILABILITIES_MAX = 3; // This is the maximum number of availabilities that will be created for each user
+const NUMBER_OF_CRITERIA_MAX = 3; // This is the maximum number of availabilities that will be created for each user
 
 
 const GOOGLE_PLACES_API_KEY = 'AIzaSyBznSC8S1mPU-GPjsxuagQqnNK3a8xVOl4'; // Replace with your API key
@@ -184,7 +185,7 @@ const createRandomVisits = async () => {
 
     // 1) Get all the users
     const responseRE = await axios.get(`${URL}/realestate`);
-    const re = response.data;
+    const re = responseRE.data;
 
     for (const user of users) {
         const numberOfVisits = Math.floor(Math.random() * 10) + 1; // Random number of visits between 1 and 10
@@ -217,7 +218,76 @@ const createRandomVisits = async () => {
     }
 }
 
+const createRandomCriteria = async () => {
+    // 1) Get all the users
+    const response = await axios.get(`${URL}/user`);
+    const users = response.data;
 
+    // 2) Create random criteria
+    console.log('Creating random criteria...');
+
+    for (const user of users) {
+        const numberOfCriteria = Math.floor(Math.random() * NUMBER_OF_CRITERIA_MAX) + 1;
+
+        for (let i = 0; i < numberOfCriteria; i++) {
+            const criteriaData = {
+                phone_number: user.phone_number,
+                criteria: faker.lorem.words(),
+                criteria_answer: faker.lorem.words(),
+                photo_required: faker.datatype.boolean(),
+                photo: `https://picsum.photos/2000/1400`,
+                video_required: faker.datatype.boolean(),
+                video: `https://picsum.photos/2000/1400`, // There is no random video api around there
+                reusable: faker.datatype.boolean(),
+            };
+
+            // 3) Post the random criteria to the API
+            try {
+                const response = await axios.post(`${URL}/criteria`, criteriaData);
+                console.log('Random criteria created successfully:', response.data);
+            } catch (error) {
+                console.error('Error creating random criteria:', error.response ? error.response.data : error.message);
+                console.error(criteriaData);
+            }
+        }
+    }
+
+
+
+}
+
+
+// async function linkCriteriaAndVisits() {
+//     try {
+//         // Step 1: Get all visits
+//         const visitsResponse = await axios.get(`${URL}/visit`);
+//         const visits = visitsResponse.data;
+//         console.log('Linking completed successfully');
+//     } catch (error) {
+//         console.error('Error linking criterias and visits:', error.message);
+//     }
+// }
+//
+// // Helper function to get a random subset of elements from an array
+// function getRandomElements(array, num) {
+//     const shuffled = array.sort(() => 0.5 - Math.random());
+//     return shuffled.slice(0, num);
+// }
+//
+// // Assuming you have an API endpoint to link criterias to visits
+// async function linkCriteriasToVisit(visitId, criterias) {
+//     try {
+//         // Use your API endpoint to link criterias to the visit
+//         await axios.post(`${URL}/linkCriteriaVisit`, {
+//             idVisit: visitId,
+//             criterias: criterias.map(criteria => criteria.idCriteria),
+//         });
+//
+//         console.log(`Criterias linked to visit ${visitId}`);
+//     } catch (error) {
+//         console.error(`Error linking criterias to visit ${visitId}:`, error.message);
+//     }
+// }
 const processUsers = async () => {
     try {
         const data = await readFileAsync('users.json');
@@ -230,6 +300,10 @@ const processUsers = async () => {
         await createRealEstate();
 
         await createRandomVisits();
+
+        await createRandomCriteria();
+
+        // await linkCriteriaAndVisits();
     } catch (error) {
         console.error(`Error reading the file: ${error.message}`);
     }
