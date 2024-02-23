@@ -149,7 +149,30 @@ const processUser = async (user) => {
     }
 };
 
+const createRealEstate = async () => {
+    // 1) Get all the users
+    const response = await axios.get(`${URL}/user`);
+    const users = response.data;
 
+    // 2) Create Real Estate
+    console.log('Creating real estate...');
+
+    for (const user of users) {
+        const realEstateData = {
+            address_id: user.address_id,
+            type_id: Math.floor(Math.random() * 5) + 1,
+        };
+
+        // 3) Post the real estate to the API
+        try {
+            const response = await axios.post(`${URL}/realestate`, realEstateData);
+            console.log('Real estate created successfully:', response.data);
+        } catch (error) {
+            console.error('Error creating real estate:', error.response ? error.response.data : error.message);
+        }
+
+    }
+}
 const createRandomVisits = async () => {
     // 1) Get all the users
     const response = await axios.get(`${URL}/user`);
@@ -158,16 +181,23 @@ const createRandomVisits = async () => {
     // 2) Create random visits
     console.log('Creating random visits...');
 
+
+    // 1) Get all the users
+    const responseRE = await axios.get(`${URL}/realestate`);
+    const re = response.data;
+
     for (const user of users) {
         const numberOfVisits = Math.floor(Math.random() * 10) + 1; // Random number of visits between 1 and 10
 
         for (let i = 0; i < numberOfVisits; i++) {
             const randomUser = users[Math.floor(Math.random() * users.length)]; // Random user from the list
 
+            const randomREID = re[Math.floor(Math.random() * re.length)].id;
+
             const visitData = {
                 phone_number_prospect: user.phone_number,
                 phone_number_visitor: randomUser.phone_number,
-                real_estate_id: Math.floor(Math.random() * 10) + 1,
+                real_estate_id: randomREID,
                 verification_code: Math.floor(Math.random() * 999999) + 100000,
                 start_time: faker.date.future(), // Example: Generating a random future date
                 price: Math.floor(Math.random() * 40) + 10, // Example: Generating a random price between 50 and 200
@@ -190,12 +220,14 @@ const createRandomVisits = async () => {
 
 const processUsers = async () => {
     try {
-        // const data = await readFileAsync('users.json');
-        // const users = data.results;
-        // console.log(`Processing ${NUMBER_OF_USERS} users...`);
-        // for (let i = 0; i < NUMBER_OF_USERS; i++) {
-        //     await processUser(users[i]);
-        // }
+        const data = await readFileAsync('users.json');
+        const users = data.results;
+        console.log(`Processing ${NUMBER_OF_USERS} users...`);
+        for (let i = 0; i < NUMBER_OF_USERS; i++) {
+            await processUser(users[i]);
+        }
+
+        await createRealEstate();
 
         await createRandomVisits();
     } catch (error) {
