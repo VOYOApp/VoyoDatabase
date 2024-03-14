@@ -78,7 +78,7 @@ const createUser = async (user) => {
     const radius = getRandomRadius();
 
     try {
-        await axios.post(`${URL}/inscription`, {
+        await axios.post(`${URL}/api/user`, {
             phone_number: phoneNumber,
             first_name: firstName,
             last_name: lastName,
@@ -129,7 +129,7 @@ const createRandomAvailability = async (userId) => {
 
 
     try {
-        await axios.post(`${URL}/availability`, {
+        await axios.post(`${URL}/api/availability`, {
             phone_number: userId, availability, duration, repeat: repeatPattern,
         });
     } catch (error) {
@@ -152,7 +152,7 @@ const processUser = async (user) => {
 
 const createRealEstate = async () => {
     // 1) Get all the users
-    const response = await axios.get(`${URL}/user`);
+    const response = await axios.get(`${URL}/api/user`);
     const users = response.data;
 
     // 2) Create Real Estate
@@ -165,7 +165,7 @@ const createRealEstate = async () => {
 
         // 3) Post the real estate to the API
         try {
-            const response = await axios.post(`${URL}/realestate`, realEstateData);
+            const response = await axios.post(`${URL}/api/realestate`, realEstateData);
             console.log('Real estate created successfully:', response.data);
         } catch (error) {
             console.error('Error creating real estate:', error.response ? error.response.data : error.message);
@@ -175,7 +175,7 @@ const createRealEstate = async () => {
 }
 const createRandomVisits = async () => {
     // 1) Get all the users
-    const response = await axios.get(`${URL}/user`);
+    const response = await axios.get(`${URL}/api/user`);
     const users = response.data;
 
     // 2) Create random visits
@@ -183,7 +183,7 @@ const createRandomVisits = async () => {
 
 
     // 1) Get all the users
-    const responseRE = await axios.get(`${URL}/realestate`);
+    const responseRE = await axios.get(`${URL}/api/realestate`);
     const re = responseRE.data;
 
     for (const user of users) {
@@ -208,7 +208,7 @@ const createRandomVisits = async () => {
 
             // 3) Post the random visits to the API
             try {
-                const response = await axios.post(`${URL}/visit`, visitData);
+                const response = await axios.post(`${URL}/api/visit`, visitData);
                 console.log('Random visits created successfully:', response.data);
             } catch (error) {
                 console.error('Error creating random visits:', error.response ? error.response.data : error.message);
@@ -219,7 +219,7 @@ const createRandomVisits = async () => {
 
 const createRandomCriteria = async () => {
     // 1) Get all the users
-    const response = await axios.get(`${URL}/user`);
+    const response = await axios.get(`${URL}/api/user`);
     const users = response.data;
 
     // 2) Create random criteria
@@ -242,7 +242,7 @@ const createRandomCriteria = async () => {
 
             // 3) Post the random criteria to the API
             try {
-                const response = await axios.post(`${URL}/criteria`, criteriaData);
+                const response = await axios.post(`${URL}/api/criteria`, criteriaData);
                 console.log('Random criteria created successfully:', response.data);
             } catch (error) {
                 console.error('Error creating random criteria:', error.response ? error.response.data : error.message);
@@ -258,11 +258,11 @@ const createRandomCriteria = async () => {
 async function linkCriteriaAndVisits() {
     try {
         // Step 1: Get all visits
-        const visitsResponse = await axios.get(`${URL}/visit`);
+        const visitsResponse = await axios.get(`${URL}/api/visit`);
         const visits = visitsResponse.data;
 
         // Step 2: Get all criterias
-        const criteriasResponse = await axios.get(`${URL}/criteria`);
+        const criteriasResponse = await axios.get(`${URL}/api/criteria`);
         const criterias = criteriasResponse.data;
 
         // Step 3: Link criterias to visits
@@ -297,7 +297,7 @@ async function linkCriteriasToVisit(visitId, criterias) {
 
         for (const criteria of criterias) {
             // Use your API endpoint to link criterias to the visit
-            await axios.post(`${URL}/linkCriteriaVisit`, {
+            await axios.post(`${URL}/api/linkCriteriaVisit`, {
                 idVisit: visitId, idCriteria: criteria.id ,
             });
         }
@@ -314,9 +314,9 @@ const processUsers = async () => {
         const data = await readFileAsync('users.json');
         const users = data.results;
         console.log(`Processing ${NUMBER_OF_USERS} users...`);
-        // for (let i = 0; i < NUMBER_OF_USERS; i++) {
-        //     await processUser(users[i]);
-        // }
+        for (let i = 0; i < NUMBER_OF_USERS; i++) {
+            await processUser(users[i]);
+        }
 
         await createRealEstate();
 
