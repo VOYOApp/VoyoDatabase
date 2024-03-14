@@ -160,8 +160,7 @@ const createRealEstate = async () => {
 
     for (const user of users) {
         const realEstateData = {
-            address_id: user.address_id,
-            type_id: Math.floor(Math.random() * 5) + 1,
+            address_id: user.address_id, type_id: Math.floor(Math.random() * 5) + 1,
         };
 
         // 3) Post the real estate to the API
@@ -253,49 +252,71 @@ const createRandomCriteria = async () => {
     }
 
 
-
 }
 
 
-// async function linkCriteriaAndVisits() {
-//     try {
-//         // Step 1: Get all visits
-//         const visitsResponse = await axios.get(`${URL}/visit`);
-//         const visits = visitsResponse.data;
-//         console.log('Linking completed successfully');
-//     } catch (error) {
-//         console.error('Error linking criterias and visits:', error.message);
-//     }
-// }
-//
-// // Helper function to get a random subset of elements from an array
-// function getRandomElements(array, num) {
-//     const shuffled = array.sort(() => 0.5 - Math.random());
-//     return shuffled.slice(0, num);
-// }
-//
-// // Assuming you have an API endpoint to link criterias to visits
-// async function linkCriteriasToVisit(visitId, criterias) {
-//     try {
-//         // Use your API endpoint to link criterias to the visit
-//         await axios.post(`${URL}/linkCriteriaVisit`, {
-//             idVisit: visitId,
-//             criterias: criterias.map(criteria => criteria.idCriteria),
-//         });
-//
-//         console.log(`Criterias linked to visit ${visitId}`);
-//     } catch (error) {
-//         console.error(`Error linking criterias to visit ${visitId}:`, error.message);
-//     }
-// }
+async function linkCriteriaAndVisits() {
+    try {
+        // Step 1: Get all visits
+        const visitsResponse = await axios.get(`${URL}/visit`);
+        const visits = visitsResponse.data;
+
+        // Step 2: Get all criterias
+        const criteriasResponse = await axios.get(`${URL}/criteria`);
+        const criterias = criteriasResponse.data;
+
+        // Step 3: Link criterias to visits
+        for (const visit of visits) {
+            const matchingCriterias = criterias.filter(criteria => criteria.phone_number === visit.phone_number_prospect);
+
+            // Assign between 1 and 10 random criterias to the visit
+            const randomNumberOfCriterias = Math.floor(Math.random() * 10) + 1;
+            const selectedCriterias = getRandomElements(matchingCriterias, randomNumberOfCriterias);
+
+            // console.log(visit.idVisit, selectedCriterias)
+
+            // Assuming you have an API endpoint to link criterias to visits
+            await linkCriteriasToVisit(visit.id, selectedCriterias);
+        }
+
+        console.log('Linking completed successfully');
+    } catch (error) {
+        console.error('Error linking criterias and visits:', error.message);
+    }
+}
+
+// Helper function to get a random subset of elements from an array
+function getRandomElements(array, num) {
+    const shuffled = array.sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, num);
+}
+
+// Assuming you have an API endpoint to link criterias to visits
+async function linkCriteriasToVisit(visitId, criterias) {
+    try {
+
+        for (const criteria of criterias) {
+            // Use your API endpoint to link criterias to the visit
+            await axios.post(`${URL}/linkCriteriaVisit`, {
+                idVisit: visitId, idCriteria: criteria.id ,
+            });
+        }
+
+
+        console.log(`Criterias linked to visit ${visitId}`);
+    } catch (error) {
+        console.error(`Error linking criterias to visit ${visitId}:`, error.message);
+    }
+}
+
 const processUsers = async () => {
     try {
         const data = await readFileAsync('users.json');
         const users = data.results;
         console.log(`Processing ${NUMBER_OF_USERS} users...`);
-        for (let i = 0; i < NUMBER_OF_USERS; i++) {
-            await processUser(users[i]);
-        }
+        // for (let i = 0; i < NUMBER_OF_USERS; i++) {
+        //     await processUser(users[i]);
+        // }
 
         await createRealEstate();
 
@@ -303,7 +324,7 @@ const processUsers = async () => {
 
         await createRandomCriteria();
 
-        // await linkCriteriaAndVisits();
+        await linkCriteriaAndVisits();
     } catch (error) {
         console.error(`Error reading the file: ${error.message}`);
     }

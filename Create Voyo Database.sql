@@ -28,20 +28,22 @@ CREATE TABLE role
 DROP TABLE IF EXISTS "user" CASCADE;
 CREATE TABLE "user"
 (
-    phoneNumber    VARCHAR(13) NOT NULL,
-    firstName      TEXT        NOT NULL,
-    lastName       VARCHAR(50) NOT NULL,
-    email          VARCHAR(50),
-    password       TEXT        NOT NULL,
-    idRole         INTEGER     NOT NULL,
-    biography      TEXT,
-    profilePicture TEXT,
-    pricing        DECIMAL(10, 2),
-    idAddressGMap  VARCHAR(200),
-    radius         INTEGER,
-    x              DECIMAL(10, 8),
-    y              DECIMAL(11, 8),
-    geom           GEOMETRY,
+    phoneNumber       VARCHAR(13) NOT NULL,
+    firstName         TEXT        NOT NULL,
+    lastName          VARCHAR(50) NOT NULL,
+    email             VARCHAR(50),
+    password          TEXT        NOT NULL,
+    passwordUpdatedAt TIMESTAMP
+        CONSTRAINT passwordUpdatedAt DEFAULT CURRENT_TIMESTAMP,
+    idRole            INTEGER     NOT NULL,
+    biography         TEXT,
+    profilePicture    TEXT,
+    pricing           DECIMAL(10, 2),
+    idAddressGMap     VARCHAR(200),
+    radius            INTEGER,
+    x                 DECIMAL(10, 8),
+    y                 DECIMAL(11, 8),
+    geom              GEOMETRY,
     PRIMARY KEY (phoneNumber),
     FOREIGN KEY (idRole) REFERENCES Role (idRole)
 );
@@ -65,7 +67,7 @@ CREATE TABLE visit
     phoneNumberProspect VARCHAR(13),
     phoneNumberVisitor  VARCHAR(13),
     idRealEstate        INTEGER   NOT NULL,
-    codeVerification    INT  NOT NULL,
+    codeVerification    INT       NOT NULL,
     startTime           TIMESTAMP NOT NULL,
     price               VARCHAR(50),
     status              VARCHAR(50) CHECK ( status IN ('PENDING', 'ACCEPTED', 'REFUSED', 'CANCELED', 'DONE')),
@@ -101,3 +103,21 @@ CREATE TABLE linkCriteriaVisit
     FOREIGN KEY (idCriteria) REFERENCES criteria (idCriteria),
     FOREIGN KEY (idVisit) REFERENCES visit (idVisit)
 );
+
+
+
+-- Add the required data in the database
+
+INSERT INTO typeRealEstate (idTypeRealEstate, label, duration)
+VALUES (1, 'Studio, T1', '00:30:00'),
+       (2, 'T2, T3, T4', '00:40:00'),
+       (3, 'T5 et plus', '00:50:00'),
+       (4, 'Maison', '01:00:00'),
+       (5, 'Villa', '01:30:00');
+
+
+INSERT INTO role (idRole, label)
+VALUES (1, 'VISITOR'),
+       (2, 'PROSPECT'),
+       (3, 'ADMIN');
+
