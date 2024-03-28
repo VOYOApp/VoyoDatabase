@@ -7,16 +7,6 @@ CREATE TABLE typeRealEstate
     PRIMARY KEY (idTypeRealEstate)
 );
 
-DROP TABLE IF EXISTS realEstate CASCADE;
-CREATE TABLE realEstate
-(
-    idRealEstate     SERIAL       NOT NULL,
-    idAddressGMap    VARCHAR(200) NOT NULL,
-    idTypeRealEstate INTEGER,
-    PRIMARY KEY (idRealEstate),
-    FOREIGN KEY (idTypeRealEstate) REFERENCES typeRealEstate (idTypeRealEstate)
-);
-
 DROP TABLE IF EXISTS role CASCADE;
 CREATE TABLE role
 (
@@ -44,6 +34,7 @@ CREATE TABLE "user"
     x                 DECIMAL(10, 8),
     y                 DECIMAL(11, 8),
     geom              GEOMETRY,
+    status            VARCHAR(50) CHECK ( status IN ('VALIDATED', 'BANNED', 'PENDING_VALIDATION')),
     PRIMARY KEY (phoneNumber),
     FOREIGN KEY (idRole) REFERENCES Role (idRole)
 );
@@ -66,16 +57,19 @@ CREATE TABLE visit
     idVisit             SERIAL,
     phoneNumberProspect VARCHAR(13),
     phoneNumberVisitor  VARCHAR(13),
-    idRealEstate        INTEGER   NOT NULL,
-    codeVerification    INT       NOT NULL,
-    startTime           TIMESTAMP NOT NULL,
+    codeVerification    INT          NOT NULL,
+    startTime           TIMESTAMP    NOT NULL,
     price               VARCHAR(50),
     status              VARCHAR(50) CHECK ( status IN ('PENDING', 'ACCEPTED', 'REFUSED', 'CANCELED', 'DONE')),
     note                NUMERIC(8, 3),
+    idAddressGMap       VARCHAR(200) NOT NULL,
+    idTypeRealEstate    INTEGER,
+    x                   DECIMAL(10, 8),
+    y                   DECIMAL(11, 8),
     PRIMARY KEY (idVisit),
     FOREIGN KEY (phoneNumberProspect) REFERENCES "user" (phoneNumber),
     FOREIGN KEY (phoneNumberVisitor) REFERENCES "user" (phoneNumber),
-    FOREIGN KEY (idRealEstate) REFERENCES realEstate (idRealEstate)
+    FOREIGN KEY (idTypeRealEstate) REFERENCES typeRealEstate (idTypeRealEstate)
 );
 
 DROP TABLE IF EXISTS criteria CASCADE;
@@ -105,7 +99,6 @@ CREATE TABLE linkCriteriaVisit
 );
 
 
-
 -- Add the required data in the database
 
 INSERT INTO typeRealEstate (idTypeRealEstate, label, duration)
@@ -116,8 +109,10 @@ VALUES (1, 'Studio, T1', '00:30:00'),
        (5, 'Villa', '01:30:00');
 
 
-INSERT INTO role (idRole, label)
-VALUES (1, 'VISITOR'),
-       (2, 'PROSPECT'),
-       (3, 'ADMIN');
+INSERT INTO role (label)
+VALUES ('VISITOR'),
+       ('PROSPECT'),
+       ('ADMIN'),
+       ('BANNED'),
+       ('PENDING_VALIDATION')
 

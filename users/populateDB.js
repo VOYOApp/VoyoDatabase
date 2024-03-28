@@ -2,9 +2,9 @@ const axios = require('axios');
 const fs = require('fs');
 const faker = require('faker');
 
-const NUMBER_OF_USERS = 30; // Max => 5000
-const NUMBER_OF_AVAILABILITIES_MAX = 3; // This is the maximum number of availabilities that will be created for each user
-const NUMBER_OF_CRITERIA_MAX = 3; // This is the maximum number of availabilities that will be created for each user
+const NUMBER_OF_USERS = 15; // Max => 1000
+const NUMBER_OF_AVAILABILITIES_MAX = 10;
+const NUMBER_OF_CRITERIA_MAX = 5;
 
 
 const GOOGLE_PLACES_API_KEY = 'AIzaSyBznSC8S1mPU-GPjsxuagQqnNK3a8xVOl4'; // Replace with your API key
@@ -44,6 +44,63 @@ const getAddressId = async (location) => {
 
     return null;
 };
+const retrieveUserPassword = async (email) => {
+    // Open the users.json file and retrieve the password of the user with the given email
+    try {
+        const data = await readFileAsync('users.json');
+        const user = data.results.find(user => user.email === email);
+        return user ? user.login.password : null;
+    } catch (error) {
+        console.error(`Error reading the file: ${error.message}`);
+    }
+}
+
+// const userLogging = async (user) => {
+//     const email = user.email
+//     const password = await retrieveUserPassword(email);
+//
+//     try {
+//         const requestOptions = {
+//             method: "GET", redirect: "follow"
+//         };
+//
+//         fetch(`${URL}/api/user/login?email=${email}&password=${password}`, requestOptions)
+//             .then((response) => response.text())
+//             .then((result) => console.log(JSON.parse(result).token))
+//             .catch((error) => console.error(error));
+//
+//
+//     } catch (error) {
+//         console.error(`Error logging in user ${email}: ${error.message}`);
+//     }
+//
+//     return null;
+//
+// }
+
+const getAddressData = async (location) => {
+
+    try {
+        const response = await axios.get(`https://maps.googleapis.com/maps/api/place/findplacefromtext/json`, {
+            params: {
+                input: location, inputtype: 'textquery', fields: 'place_id', key: GOOGLE_PLACES_API_KEY,
+            },
+        });
+
+
+        if (response.data.status === 'OK' && response.data.candidates.length > 0) {
+            return {
+                place_id: response.data.candidates[0].place_id,
+                x: response.data.candidates[0].geometry.location.lat,
+                y: response.data.candidates[0].geometry.location.lng
+            };
+        }
+    } catch (error) {
+        console.error(`Error getting address_id for address ${location}: ${error.message}`);
+    }
+
+    return null;
+};
 
 const getRandomAddress = (filename) => {
     try {
@@ -70,12 +127,18 @@ const createUser = async (user) => {
     const email = user.email;
     const password = user.login.password;
     const roleId = getRandomRoleId();
-    const bio = '';
+    const bio = faker.lorem.words();
     const profilePicture = user.picture.medium;
-    const pricing = parseFloat(getRandomPrice());
-    const randomAddress = getRandomAddress("addres0726.json");
-    const addressId = await getAddressId(randomAddress);
-    const radius = getRandomRadius();
+    let pricing = 0
+    let randomAddress = ""
+    let addressId = ""
+    let radius = 0
+    if (roleId === 1) {
+        pricing = parseFloat(getRandomPrice());
+        randomAddress = getRandomAddress("addres0726.json");
+        addressId = await getAddressId(randomAddress);
+        radius = getRandomRadius();
+    }
 
     try {
         await axios.post(`${URL}/api/user`, {
@@ -150,29 +213,6 @@ const processUser = async (user) => {
     }
 };
 
-const createRealEstate = async () => {
-    // 1) Get all the users
-    const response = await axios.get(`${URL}/api/user`);
-    const users = response.data;
-
-    // 2) Create Real Estate
-    console.log('Creating real estate...');
-
-    for (const user of users) {
-        const realEstateData = {
-            address_id: user.address_id, type_id: Math.floor(Math.random() * 5) + 1,
-        };
-
-        // 3) Post the real estate to the API
-        try {
-            const response = await axios.post(`${URL}/api/realestate`, realEstateData);
-            console.log('Real estate created successfully:', response.data);
-        } catch (error) {
-            console.error('Error creating real estate:', error.response ? error.response.data : error.message);
-        }
-
-    }
-}
 const createRandomVisits = async () => {
     // 1) Get all the users
     const response = await axios.get(`${URL}/api/user`);
@@ -182,27 +222,25 @@ const createRandomVisits = async () => {
     console.log('Creating random visits...');
 
 
-    // 1) Get all the users
-    const responseRE = await axios.get(`${URL}/api/realestate`);
-    const re = responseRE.data;
-
     for (const user of users) {
-        const numberOfVisits = Math.floor(Math.random() * 10) + 1; // Random number of visits between 1 and 10
+        const numberOfVisits = Math.floor(Math.random() * 20) + 3; // Random number of visits between 1 and 10
 
         for (let i = 0; i < numberOfVisits; i++) {
             const randomUser = users[Math.floor(Math.random() * users.length)]; // Random user from the list
 
-            const randomREID = re[Math.floor(Math.random() * re.length)].id;
+            const randomREID = await getAddressData(getRandomAddress("addres0726.json"));
 
             const visitData = {
                 phone_number_prospect: user.phone_number,
                 phone_number_visitor: randomUser.phone_number,
-                real_estate_id: randomREID,
+                randomREID,
                 verification_code: Math.floor(Math.random() * 999999) + 100000,
-                start_time: faker.date.future(), // Example: Generating a random future date
-                price: Math.floor(Math.random() * 40) + 10, // Example: Generating a random price between 50 and 200
+                start_time: faker.date.future(),
+                price: Math.floor(Math.random() * 40) + 10,
+                type_real_estate: Math.floor(Math.random() * 5) + 1,
                 status: faker.random.arrayElement(['PENDING', 'ACCEPTED', 'REFUSED', 'CANCELED', 'DONE']),
-                note: parseInt((Math.random() * (5 - 0.1) + 0.1).toFixed(1))
+                note: parseInt((Math.random() * (5 - 0.1) + 0.1).toFixed(1)),
+                criterias: []
             };
 
 
@@ -223,35 +261,49 @@ const createRandomCriteria = async () => {
     const users = response.data;
 
     // 2) Create random criteria
-    console.log('Creating random criteria...');
-
     for (const user of users) {
-        const numberOfCriteria = Math.floor(Math.random() * NUMBER_OF_CRITERIA_MAX) + 1;
+        const email = user.email
+        const password = await retrieveUserPassword(email);
 
-        for (let i = 0; i < numberOfCriteria; i++) {
-            const criteriaData = {
-                phone_number: user.phone_number,
-                criteria: faker.lorem.words(),
-                criteria_answer: faker.lorem.words(),
-                photo_required: faker.datatype.boolean(),
-                photo: `https://picsum.photos/2000/1400`,
-                video_required: faker.datatype.boolean(),
-                video: `https://picsum.photos/2000/1400`, // There is no random video api around there
-                reusable: faker.datatype.boolean(),
+        try {
+            const requestOptions = {
+                method: "GET", redirect: "follow"
             };
 
-            // 3) Post the random criteria to the API
-            try {
-                const response = await axios.post(`${URL}/api/criteria`, criteriaData);
-                console.log('Random criteria created successfully:', response.data);
-            } catch (error) {
-                console.error('Error creating random criteria:', error.response ? error.response.data : error.message);
-                console.error(criteriaData);
-            }
+            fetch(`${URL}/api/user/login?email=${email}&password=${password}`, requestOptions)
+                .then((response) => response.text())
+                .then(async (result) => {
+                    const numberOfCriteria = Math.floor(Math.random() * NUMBER_OF_CRITERIA_MAX) + 1;
+
+                    for (let i = 0; i < numberOfCriteria; i++) {
+                        const criteriaData = {
+                            phone_number: user.phone_number,
+                            criteria: faker.lorem.words(),
+                            photo_required: faker.datatype.boolean(),
+                            video_required: faker.datatype.boolean(),
+                            reusable: true,
+                        };
+
+                        try {
+                            const response = await axios.post(`${URL}/api/criteria`, criteriaData, {
+                                headers: {
+                                    "Authorization": `Bearer ${JSON.parse(result).token}`
+                                }
+                            })
+                            console.log('Random criteria created successfully:', response.data);
+                        } catch (error) {
+                            console.error('Error creating random criteria:', error.response ? error.response.data : error.message);
+                            // console.error(criteriaData);
+                        }
+                    }
+                })
+                .catch((error) => console.error(error));
+
+
+        } catch (error) {
+            console.error(`Error logging in user ${email}: ${error.message}`);
         }
     }
-
-
 }
 
 
@@ -298,7 +350,7 @@ async function linkCriteriasToVisit(visitId, criterias) {
         for (const criteria of criterias) {
             // Use your API endpoint to link criterias to the visit
             await axios.post(`${URL}/api/linkCriteriaVisit`, {
-                idVisit: visitId, idCriteria: criteria.id ,
+                idVisit: visitId, idCriteria: criteria.id,
             });
         }
 
@@ -311,20 +363,16 @@ async function linkCriteriasToVisit(visitId, criterias) {
 
 const processUsers = async () => {
     try {
-        const data = await readFileAsync('users.json');
-        const users = data.results;
-        console.log(`Processing ${NUMBER_OF_USERS} users...`);
-        for (let i = 0; i < NUMBER_OF_USERS; i++) {
-            await processUser(users[i]);
-        }
-
-        await createRealEstate();
-
-        await createRandomVisits();
+        // const data = await readFileAsync('users.json');
+        // const users = data.results;
+        // console.log(`Processing ${NUMBER_OF_USERS} users...`);
+        // for (let i = 0; i < NUMBER_OF_USERS; i++) {
+        //     await processUser(users[i]);
+        // }
 
         await createRandomCriteria();
 
-        await linkCriteriaAndVisits();
+        // await createRandomVisits();
     } catch (error) {
         console.error(`Error reading the file: ${error.message}`);
     }
