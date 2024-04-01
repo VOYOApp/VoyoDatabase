@@ -2,9 +2,10 @@ const axios = require('axios');
 const fs = require('fs');
 const faker = require('faker');
 
-const NUMBER_OF_USERS = 15; // Max => 1000
-const NUMBER_OF_AVAILABILITIES_MAX = 10;
-const NUMBER_OF_CRITERIA_MAX = 5;
+const NUMBER_OF_USERS = 50; // Max => 1000
+const NUMBER_OF_AVAILABILITIES_MAX = 20;
+const NUMBER_OF_CRITERIA_MAX = 10;
+const NUMBER_OF_VISITS_MAX = 30;
 
 
 const GOOGLE_PLACES_API_KEY = 'AIzaSyBznSC8S1mPU-GPjsxuagQqnNK3a8xVOl4'; // Replace with your API key
@@ -54,45 +55,20 @@ const retrieveUserPassword = async (email) => {
         console.error(`Error reading the file: ${error.message}`);
     }
 }
+const getAddressData = async (addressID) => {
 
-// const userLogging = async (user) => {
-//     const email = user.email
-//     const password = await retrieveUserPassword(email);
-//
-//     try {
-//         const requestOptions = {
-//             method: "GET", redirect: "follow"
-//         };
-//
-//         fetch(`${URL}/api/user/login?email=${email}&password=${password}`, requestOptions)
-//             .then((response) => response.text())
-//             .then((result) => console.log(JSON.parse(result).token))
-//             .catch((error) => console.error(error));
-//
-//
-//     } catch (error) {
-//         console.error(`Error logging in user ${email}: ${error.message}`);
-//     }
-//
-//     return null;
-//
-// }
-
-const getAddressData = async (location) => {
-
+    if (!addressID) {
+        return null;
+    }
     try {
-        const response = await axios.get(`https://maps.googleapis.com/maps/api/place/findplacefromtext/json`, {
-            params: {
-                input: location, inputtype: 'textquery', fields: 'place_id', key: GOOGLE_PLACES_API_KEY,
-            },
-        });
+        const response = await axios.get(`https://maps.googleapis.com/maps/api/geocode/json?key=${GOOGLE_PLACES_API_KEY}&place_id=${addressID}`);
 
+        if (response.data.status === 'OK' && response.data.results.length > 0) {
 
-        if (response.data.status === 'OK' && response.data.candidates.length > 0) {
             return {
-                place_id: response.data.candidates[0].place_id,
-                x: response.data.candidates[0].geometry.location.lat,
-                y: response.data.candidates[0].geometry.location.lng
+                place_id: addressID,
+                x: response.data.results[0].geometry.location.lat,
+                y: response.data.results[0].geometry.location.lng
             };
         }
     } catch (error) {
@@ -101,7 +77,6 @@ const getAddressData = async (location) => {
 
     return null;
 };
-
 const getRandomAddress = (filename) => {
     try {
         const data = fs.readFileSync(filename, 'utf8');
@@ -119,7 +94,6 @@ const getRandomAddress = (filename) => {
         return null;
     }
 };
-
 const createUser = async (user) => {
     const phoneNumber = '+33' + user.cell.replaceAll('-', '').substring(1);
     const firstName = user.name.first;
@@ -158,22 +132,8 @@ const createUser = async (user) => {
         console.log(`User ${firstName} ${lastName} processed successfully.`);
     } catch (error) {
         console.error(`Error processing user ${firstName} ${lastName}: ${error.message}`);
-        console.error({
-            phone_number: phoneNumber,
-            first_name: firstName,
-            last_name: lastName,
-            email: email,
-            password: password,
-            role_id: roleId,
-            biography: bio,
-            profile_picture: profilePicture,
-            pricing: pricing,
-            address_id: addressId,
-            radius: radius,
-        });
     }
 }
-
 const createRandomAvailability = async (userId) => {
     // Create a random date and time on the first week of February 2024
     const year = 2024;
@@ -199,7 +159,6 @@ const createRandomAvailability = async (userId) => {
         console.error(`Error creating availability for user ${userId}: ${error.message}`);
     }
 }
-
 const processUser = async (user) => {
     try {
         await createUser(user);
@@ -212,167 +171,121 @@ const processUser = async (user) => {
         console.error(`Error processing user: ${error.message}`);
     }
 };
-
 const createRandomVisits = async () => {
     // 1) Get all the users
-    const response = await axios.get(`${URL}/api/user`);
-    const users = response.data;
+    // const response = await axios.get(`${URL}/api/user`);
+    // const users = response.data;
 
     // 2) Create random visits
     console.log('Creating random visits...');
 
 
-    for (const user of users) {
-        const numberOfVisits = Math.floor(Math.random() * 20) + 3; // Random number of visits between 1 and 10
+    const req = axios.get(`${URL}/api/user`);
+    const users = (await req).data;
 
+    for (user of users) {
+
+        const numberOfVisits = Math.floor(Math.random() * NUMBER_OF_VISITS_MAX) + 3; // Random number of visits between 3 and 10
+
+        // console.log (user)
         for (let i = 0; i < numberOfVisits; i++) {
-            const randomUser = users[Math.floor(Math.random() * users.length)]; // Random user from the list
-
-            const randomREID = await getAddressData(getRandomAddress("addres0726.json"));
-
-            const visitData = {
-                phone_number_prospect: user.phone_number,
-                phone_number_visitor: randomUser.phone_number,
-                randomREID,
-                verification_code: Math.floor(Math.random() * 999999) + 100000,
-                start_time: faker.date.future(),
-                price: Math.floor(Math.random() * 40) + 10,
-                type_real_estate: Math.floor(Math.random() * 5) + 1,
-                status: faker.random.arrayElement(['PENDING', 'ACCEPTED', 'REFUSED', 'CANCELED', 'DONE']),
-                note: parseInt((Math.random() * (5 - 0.1) + 0.1).toFixed(1)),
-                criterias: []
-            };
-
-
-            // 3) Post the random visits to the API
             try {
-                const response = await axios.post(`${URL}/api/visit`, visitData);
-                console.log('Random visits created successfully:', response.data);
+                const randomUser = users[Math.floor(Math.random() * users.length)]; // Random user from the list
+
+                const randomREID = await getAddressData(await getAddressId(getRandomAddress("addres0726.json")));
+
+                let status = faker.random.arrayElement(['PENDING', 'ACCEPTED', 'REFUSED', 'CANCELED', 'DONE'])
+
+                const visitData = {
+                    phone_number_visitor: randomUser.phone_number,
+                    x: randomREID.x,
+                    y: randomREID.y,
+                    address_id: randomREID.place_id,
+                    verification_code: Math.floor(Math.random() * 999999) + 100000,
+                    start_time: faker.date.future(),
+                    price: Math.floor(Math.random() * 40) + 10,
+                    type_real_estate_id: Math.floor(Math.random() * 5) + 1,
+                    status,
+                    note: status === 'DONE' ? parseInt((Math.random() * (5 - 0.1) + 0.1).toFixed(1)) : 0,
+                    criterias: await createRandomCriteria(user)
+                };
+
+                // 3) Post the random visits to the API
+                try {
+
+                    const email = user.email
+                    const password = await retrieveUserPassword(email);
+
+                    try {
+                        const requestOptions = {
+                            method: "GET", redirect: "follow"
+                        };
+
+                        fetch(`${URL}/api/user/login?email=${email}&password=${password}`, requestOptions)
+                            .then((response) => response.text())
+                            .then(async (result) => {
+
+                                const response = await axios.post(`${URL}/api/visit`, visitData, {
+                                    headers: {
+                                        Authorization: `Bearer ${JSON.parse(result).token}`,
+                                    },
+                                });
+                                console.log(response.data);
+
+                            })
+                            .catch((error) => {
+                                if (!error.message.includes('40')) {
+                                    console.error(error.message)
+                                }
+                            });
+
+
+                    } catch (error) {
+                        console.error(`Error logging in user ${email}: ${error.message}`);
+                    }
+
+
+                } catch (error) {
+                    console.error('Error creating random visits:', error.response ? error.response.data : error.message);
+                }
             } catch (error) {
-                console.error('Error creating random visits:', error.response ? error.response.data : error.message);
+                console.error('Error creating random visits:', error.message);
             }
         }
     }
+
 }
+const createRandomCriteria = async (user) => {
 
-const createRandomCriteria = async () => {
-    // 1) Get all the users
-    const response = await axios.get(`${URL}/api/user`);
-    const users = response.data;
+    const numberOfCriteria = Math.floor(Math.random() * NUMBER_OF_CRITERIA_MAX) + 1;
+    let criterias = []
 
-    // 2) Create random criteria
-    for (const user of users) {
-        const email = user.email
-        const password = await retrieveUserPassword(email);
+    for (let i = 0; i < numberOfCriteria; i++) {
+        const criteriaData = {
+            phone_number: user.phone_number,
+            criteria: faker.lorem.words(),
+            photo_required: faker.datatype.boolean(),
+            video_required: faker.datatype.boolean(),
+            reusable: true,
+        };
 
-        try {
-            const requestOptions = {
-                method: "GET", redirect: "follow"
-            };
-
-            fetch(`${URL}/api/user/login?email=${email}&password=${password}`, requestOptions)
-                .then((response) => response.text())
-                .then(async (result) => {
-                    const numberOfCriteria = Math.floor(Math.random() * NUMBER_OF_CRITERIA_MAX) + 1;
-
-                    for (let i = 0; i < numberOfCriteria; i++) {
-                        const criteriaData = {
-                            phone_number: user.phone_number,
-                            criteria: faker.lorem.words(),
-                            photo_required: faker.datatype.boolean(),
-                            video_required: faker.datatype.boolean(),
-                            reusable: true,
-                        };
-
-                        try {
-                            const response = await axios.post(`${URL}/api/criteria`, criteriaData, {
-                                headers: {
-                                    "Authorization": `Bearer ${JSON.parse(result).token}`
-                                }
-                            })
-                            console.log('Random criteria created successfully:', response.data);
-                        } catch (error) {
-                            console.error('Error creating random criteria:', error.response ? error.response.data : error.message);
-                            // console.error(criteriaData);
-                        }
-                    }
-                })
-                .catch((error) => console.error(error));
-
-
-        } catch (error) {
-            console.error(`Error logging in user ${email}: ${error.message}`);
-        }
+        criterias.push(criteriaData)
     }
+
+    return criterias
 }
-
-
-async function linkCriteriaAndVisits() {
-    try {
-        // Step 1: Get all visits
-        const visitsResponse = await axios.get(`${URL}/api/visit`);
-        const visits = visitsResponse.data;
-
-        // Step 2: Get all criterias
-        const criteriasResponse = await axios.get(`${URL}/api/criteria`);
-        const criterias = criteriasResponse.data;
-
-        // Step 3: Link criterias to visits
-        for (const visit of visits) {
-            const matchingCriterias = criterias.filter(criteria => criteria.phone_number === visit.phone_number_prospect);
-
-            // Assign between 1 and 10 random criterias to the visit
-            const randomNumberOfCriterias = Math.floor(Math.random() * 10) + 1;
-            const selectedCriterias = getRandomElements(matchingCriterias, randomNumberOfCriterias);
-
-            // console.log(visit.idVisit, selectedCriterias)
-
-            // Assuming you have an API endpoint to link criterias to visits
-            await linkCriteriasToVisit(visit.id, selectedCriterias);
-        }
-
-        console.log('Linking completed successfully');
-    } catch (error) {
-        console.error('Error linking criterias and visits:', error.message);
-    }
-}
-
-// Helper function to get a random subset of elements from an array
-function getRandomElements(array, num) {
-    const shuffled = array.sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, num);
-}
-
-// Assuming you have an API endpoint to link criterias to visits
-async function linkCriteriasToVisit(visitId, criterias) {
-    try {
-
-        for (const criteria of criterias) {
-            // Use your API endpoint to link criterias to the visit
-            await axios.post(`${URL}/api/linkCriteriaVisit`, {
-                idVisit: visitId, idCriteria: criteria.id,
-            });
-        }
-
-
-        console.log(`Criterias linked to visit ${visitId}`);
-    } catch (error) {
-        console.error(`Error linking criterias to visit ${visitId}:`, error.message);
-    }
-}
-
 const processUsers = async () => {
     try {
-        // const data = await readFileAsync('users.json');
-        // const users = data.results;
-        // console.log(`Processing ${NUMBER_OF_USERS} users...`);
-        // for (let i = 0; i < NUMBER_OF_USERS; i++) {
-        //     await processUser(users[i]);
-        // }
+        const data = await readFileAsync('users.json');
+        const users = data.results;
+        console.log(`Processing ${NUMBER_OF_USERS} users...`);
+        for (let i = 0; i < NUMBER_OF_USERS; i++) {
+            await processUser(users[i]);
+        }
 
-        await createRandomCriteria();
+        // await createRandomCriteria();
 
-        // await createRandomVisits();
+        await createRandomVisits();
     } catch (error) {
         console.error(`Error reading the file: ${error.message}`);
     }
