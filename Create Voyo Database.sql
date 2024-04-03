@@ -35,6 +35,8 @@ CREATE TABLE "user"
     y                 DECIMAL(11, 8),
     geom              GEOMETRY,
     status            VARCHAR(50) CHECK ( status IN ('VALIDATED', 'BANNED', 'PENDING_VALIDATION')),
+    cniBack           CHAR,
+    cniFront          CHAR,
     PRIMARY KEY (phoneNumber),
     FOREIGN KEY (idRole) REFERENCES Role (idRole)
 );
@@ -114,5 +116,7 @@ VALUES ('VISITOR'),
        ('PROSPECT'),
        ('ADMIN'),
        ('BANNED'),
-       ('PENDING_VALIDATION')
+       ('PENDING_VALIDATION');
 
+INSERT INTO "user" (phoneNumber, firstName, lastName, email, password, idRole, biography, profilePicture)
+VALUES ('+33600000000', 'Admin', 'VOYO', 'admin@example.com', '$2a$10$n5oLi6In11LV3u8qhgRipugSOhSMXwVtXH/N74CxNUzGIYXlSh4sm', 3, 'I am the admin', 'https://www.hdwallpaper.nu/wp-content/uploads/2015/04/jesus_christ_the_lord-1448342.jpg');
