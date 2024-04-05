@@ -62,7 +62,7 @@ CREATE TABLE visit
     codeVerification    INT          NOT NULL,
     startTime           TIMESTAMP    NOT NULL,
     price               VARCHAR(50),
-    status              VARCHAR(50) CHECK (status IN ('PENDING', 'ACCEPTED', 'REFUSED', 'CANCElED', 'DONE')),
+    status              VARCHAR(50) CHECK (status IN ('PENDING', 'ACCEPTED', 'REFUSED', 'CANCELED', 'DONE')),
     note                NUMERIC(8, 3) CHECK (note <= 5 AND note >= 0),
     idAddressGMap       VARCHAR(200) NOT NULL,
     idTypeRealEstate    INTEGER,
