@@ -35,8 +35,8 @@ CREATE TABLE "user"
     y                 DECIMAL(11, 8),
     geom              GEOMETRY,
     status            VARCHAR(50) CHECK ( status IN ('VALIDATED', 'BANNED', 'PENDING_VALIDATION')),
-    cniBack           CHAR,
-    cniFront          CHAR,
+    cniBack           VARCHAR,
+    cniFront          VARCHAR,
     PRIMARY KEY (phoneNumber),
     FOREIGN KEY (idRole) REFERENCES Role (idRole)
 );
