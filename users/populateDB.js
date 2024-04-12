@@ -320,9 +320,9 @@ const processUsers = async () => {
         const data = await readFileAsync('users.json');
         const users = data.results;
         console.log(`Processing ${NUMBER_OF_USERS} users...`);
-        // for (let i = 0; i < NUMBER_OF_USERS; i++) {
-        //     await processUser(users[i]);
-        // }
+        for (let i = 0; i < NUMBER_OF_USERS; i++) {
+            await processUser(users[i]);
+        }
 
         await createRandomVisits();
     } catch (error) {
