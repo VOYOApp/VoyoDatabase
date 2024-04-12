@@ -118,5 +118,5 @@ VALUES ('VISITOR'),
        ('BANNED'),
        ('PENDING_VALIDATION');
 
-INSERT INTO "user" (phoneNumber, firstName, lastName, email, password, idRole, biography, profilePicture)
-VALUES ('+33600000000', 'Admin', 'VOYO', 'admin@example.com', '$2a$10$n5oLi6In11LV3u8qhgRipugSOhSMXwVtXH/N74CxNUzGIYXlSh4sm', 3, 'I am the admin', 'https://www.hdwallpaper.nu/wp-content/uploads/2015/04/jesus_christ_the_lord-1448342.jpg');
+INSERT INTO "user" (phoneNumber, firstName, lastName, email, password, idRole, biography, profilePicture, status)
+VALUES ('+33600000000', 'Admin', 'VOYO', 'admin@example.com', '$2a$10$n5oLi6In11LV3u8qhgRipugSOhSMXwVtXH/N74CxNUzGIYXlSh4sm', 3, 'I am the admin', 'https://www.hdwallpaper.nu/wp-content/uploads/2015/04/jesus_christ_the_lord-1448342.jpg', 'VALIDATED');

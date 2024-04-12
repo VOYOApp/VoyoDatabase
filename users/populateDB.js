@@ -134,44 +134,81 @@ const createUser = async (user) => {
         console.error(`Error processing user ${firstName} ${lastName}: ${error.message}`);
     }
 }
-const createRandomAvailability = async (userId) => {
-    // Create a random date and time on the first week of February 2024
-    const year = 2024;
-    const month = 1; // February
-    const day = Math.floor(Math.random() * 7) + 1;
-    const hour = Math.floor(Math.random() * 24);
-    const minute = Math.floor(Math.random() * 60);
-    const date = new Date(year, month, day, hour, minute);
-    const availability = date.toISOString();
+const createRandomAvailability = async (user) => {
+    let a = []
+    console.log('Creating random availabilities...');
+    const numberOfAvailabilities = Math.floor(Math.random() * NUMBER_OF_AVAILABILITIES_MAX) + 1;
+    for (let i = 0; i < numberOfAvailabilities; i++) {
+        // Create a random date and time on the first week of February 2024
+        const year = 2024;
+        const month = 1; // February
+        const day = Math.floor(Math.random() * 7) + 1;
+        const hour = Math.floor(Math.random() * 24);
+        const minute = Math.floor(Math.random() * 60);
+        const date = new Date(year, month, day, hour, minute);
+        const availability = date.toISOString();
 
-    // Create a random duration between 1 and 12 hours
-    const duration = `${Math.floor(Math.random() * 12) + 1}h`;
+        // Create a random duration between 1 and 12 hours
+        const duration = `${Math.floor(Math.random() * 12) + 1}h`;
 
-    // Create a random repeat pattern (DAILY, WEEKLY, MONTHLY, YEARLY, null)
-    const repeatPattern = ['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY', null][Math.floor(Math.random() * 5)];
+        // Create a random repeat pattern (DAILY, WEEKLY, MONTHLY, YEARLY, null)
+        const repeatPattern = ['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY', null][Math.floor(Math.random() * 5)];
 
+        a.push({
+            "availability": availability, "duration": duration, "repeat": repeatPattern,
+        });
+    }
 
     try {
-        await axios.post(`${URL}/api/availability`, {
-            phone_number: userId, availability, duration, repeat: repeatPattern,
-        });
+
+        const email = user.email
+        const password = await retrieveUserPassword(email);
+
+        try {
+            const requestOptions = {
+                method: "GET", redirect: "follow"
+            };
+
+            fetch(`${URL}/api/user/login?email=${email}&password=${password}`, requestOptions)
+                .then((response) => response.text())
+                .then(async (result) => {
+                    try {
+                        await axios.post(`${URL}/api/availability`, a,{
+                            headers: {
+                                Authorization: `Bearer ${JSON.parse(result).token}`,
+                            },
+                        });
+                    } catch (error) {
+                        console.error(`Error creating availability for user ${user}: ${error.message}`);
+                    }
+                })
+                .catch((error) => {
+                    if (!error.message.includes('40')) {
+                        console.error(error.message)
+                    }
+                });
+        } catch (error) {
+            console.error(`Error logging in user ${email}: ${error.message}`);
+        }
+
+
     } catch (error) {
-        console.error(`Error creating availability for user ${userId}: ${error.message}`);
+        console.error('Error creating random visits:', error.response ? error.response.data : error.message);
     }
 }
 const processUser = async (user) => {
     try {
         await createUser(user);
-        // Create between 1 and 5 random availabilities for the user
-        const numberOfAvailabilities = Math.floor(Math.random() * NUMBER_OF_AVAILABILITIES_MAX) + 1;
-        for (let i = 0; i < numberOfAvailabilities; i++) {
-            await createRandomAvailability('+33' + user.cell.replaceAll('-', '').substring(1));
-        }
+        await createRandomAvailability(user);
     } catch (error) {
         console.error(`Error processing user: ${error.message}`);
     }
 };
 const createRandomVisits = async () => {
+
+    let admintoken = await axios.get(`${URL}/api/user/login?email=admin@example.com&password=admin`)
+    admintoken = admintoken.data.token
+
     // 1) Get all the users
     // const response = await axios.get(`${URL}/api/user`);
     // const users = response.data;
@@ -180,7 +217,11 @@ const createRandomVisits = async () => {
     console.log('Creating random visits...');
 
 
-    const req = axios.get(`${URL}/api/user`);
+    const req = axios.get(`${URL}/api/user/all`, {
+        headers: {
+            Authorization: `Bearer ${admintoken}`,
+        },
+    });
     const users = (await req).data;
 
     for (user of users) {
@@ -279,11 +320,9 @@ const processUsers = async () => {
         const data = await readFileAsync('users.json');
         const users = data.results;
         console.log(`Processing ${NUMBER_OF_USERS} users...`);
-        for (let i = 0; i < NUMBER_OF_USERS; i++) {
-            await processUser(users[i]);
-        }
-
-        // await createRandomCriteria();
+        // for (let i = 0; i < NUMBER_OF_USERS; i++) {
+        //     await processUser(users[i]);
+        // }
 
         await createRandomVisits();
     } catch (error) {
